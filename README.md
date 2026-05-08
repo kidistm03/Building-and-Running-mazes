@@ -37,7 +37,6 @@ The final solution path is displayed graphically.
 - Entrance and exit visualization
 - Red solution path visualization
 
----
 
 ## Technologies Used
 
