@@ -21,7 +21,8 @@ ROWS = 10
 COLS = 10
 MARGIN = 0.12
 
-
+northWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
+eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 
 # -------------------------
 # Animation Variables
