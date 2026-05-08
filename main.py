@@ -17,6 +17,7 @@ pygame.display.set_caption("Animated Maze Generator and Solver")
 # -------------------------
 # Maze Settings
 # -------------------------
+
 ROWS = 10
 COLS = 10
 MARGIN = 0.12
