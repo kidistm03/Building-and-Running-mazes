@@ -1,4 +1,4 @@
-# Maze Generator and Solver (OpenGL + Python)
+# Maze Generator and Solver 
 ## Project Overview
 
 This project is a procedural maze generator and solver built using Python, Pygame, and OpenGL.
@@ -10,6 +10,7 @@ Maze generation (“mouse eating walls”)
 Maze solving (red path traversal)
 Dead ends (blue markers)
 Start and end points
+
 ## Objective
 
 The goal of this project is to:
@@ -19,6 +20,7 @@ Ensure every cell is connected by a unique path (perfect maze)
 Find and display a path from:
 Start (left edge) → End (right edge)
 Visualize both generation and solving processes in real-time
+
 ## Maze Representation
 
 The maze is represented using two 2D arrays:
@@ -31,6 +33,7 @@ Wall Rules:
 Special Structure:
 Bottom boundary is handled using northWall of last row
 Left boundary is implicitly handled using eastWall[i][0]
+
 ## Maze Generation Algorithm
 
 The maze is generated using a randomized Depth-First Search (DFS) approach:
@@ -44,12 +47,14 @@ Push current cell to stack
 Move to neighbor
 If stuck → backtrack using stack
 Repeat until all cells are visited
+
 ## Key Idea:
 
 This creates a perfect maze (spanning tree) where:
 
 Every cell is reachable
 There is exactly one path between any two cells
+
 ## Maze Solver Algorithm
 
 The solver uses a stack-based DFS backtracking algorithm:
@@ -64,6 +69,7 @@ If stuck:
 Mark as dead end (blue point)
 Backtrack using stack
 Continue until reaching the end cell
+
 ## Bonus Feature (Cycle Creation)
 
 To make the maze more interesting, the generator occasionally:
@@ -78,6 +84,7 @@ Makes solving less predictable
 ### 🔴 Red dot → Current solver position
 ### 🔵 Blue dots → Dead ends
 ### White lines → Maze walls
+
 ## Technologies Used
 Python
 Pygame
