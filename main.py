@@ -104,6 +104,7 @@ def draw_walls():
 # -------------------------
 # Generate Maze Step-by-Step
 # -------------------------
+
 def generate_maze_step():
 
     global current
