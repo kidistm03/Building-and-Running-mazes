@@ -151,7 +151,9 @@ def generate_maze_step():
         elif direction == 'E':
             eastWall[i][j] = 0
 
-        
+        current = (ni, nj)
+
+        visited[ni][nj] = True
 
     elif stack:
         current = stack.pop()
