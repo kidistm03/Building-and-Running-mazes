@@ -24,7 +24,7 @@ After the maze is generated, a maze-solving algorithm uses backtracking and stac
 
 The final solution path is displayed graphically.
 
----
+
 
 ## Features
 
