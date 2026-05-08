@@ -229,9 +229,7 @@ def draw_path(path):
 
     for i, j in path:
 
-        x = -1 + MARGIN + (j * cell_width) + (cell_width / 2)
-        y = -1 + MARGIN + (i * cell_height) + (cell_height / 2)
-
+       
         glVertex2f(x, y)
 
     glEnd()
