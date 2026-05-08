@@ -1,99 +1,115 @@
-# Building and Running Mazes
+Maze Generator and Solver (OpenGL + Python)
+📌 Project Overview
 
-## Project Description
+This project is a procedural maze generator and solver built using Python, Pygame, and OpenGL.
+It visually demonstrates how a maze can be generated using a Depth-First Search (DFS) backtracking algorithm and then solved using a stack-based pathfinding method.
 
-This project generates and solves a rectangular maze using Python, OpenGL, and Pygame.
+The program dynamically shows:
 
-The maze is represented using two arrays:
+Maze generation (“mouse eating walls”)
+Maze solving (red path traversal)
+Dead ends (blue markers)
+Start and end points
+🎯 Objective
 
-```python
-northWall[R][C]
-eastWall[R][C]
-```
+The goal of this project is to:
 
-- `northWall[i][j] = 1` means the upper wall of the cell exists.
-- `eastWall[i][j] = 1` means the right wall of the cell exists.
+Generate a proper rectangular maze of size ROWS x COLS
+Ensure every cell is connected by a unique path (perfect maze)
+Find and display a path from:
+Start (left edge) → End (right edge)
+Visualize both generation and solving processes in real-time
+🧱 Maze Representation
 
-The maze is generated dynamically using a stack-based Depth First Search (DFS) algorithm.
+The maze is represented using two 2D arrays:
 
-An invisible “mouse” moves through the maze and removes walls between randomly selected unvisited neighboring cells. The remaining candidate cells are stored on a stack for backtracking when the mouse reaches a dead end.
+northWall[i][j] → top wall of cell (i, j)
+eastWall[i][j]  → right wall of cell (i, j)
+Wall Rules:
+1 → wall exists
+0 → wall removed
+Special Structure:
+Bottom boundary is handled using northWall of last row
+Left boundary is implicitly handled using eastWall[i][0]
+⚙️ Maze Generation Algorithm
 
-The maze generation process is animated in real time to visualize the wall-eating process.
+The maze is generated using a randomized Depth-First Search (DFS) approach:
 
-After the maze is generated, a maze-solving algorithm uses backtracking and stack traversal to find a valid path from the entrance to the exit.
+Steps:
+Start from a random cell
+Mark it as visited
+Randomly choose an unvisited neighbor
+Remove the wall between current and neighbor
+Push current cell to stack
+Move to neighbor
+If stuck → backtrack using stack
+Repeat until all cells are visited
+📌 Key Idea:
 
-The final solution path is displayed graphically.
+This creates a perfect maze (spanning tree) where:
 
+Every cell is reachable
+There is exactly one path between any two cells
+🐭 Maze Solver Algorithm
 
+The solver uses a stack-based DFS backtracking algorithm:
 
-## Features
+Steps:
+Start from the random start cell (left edge)
+Try moving in available directions (no wall + not visited)
+Choose a valid move randomly
+Push current position to stack
+Move forward
+If stuck:
+Mark as dead end (blue point)
+Backtrack using stack
+Continue until reaching the end cell
+🎲 Bonus Feature (Cycle Creation)
 
-- Random maze generation
-- Proper maze structure
-- Stack-based DFS generation
-- Animated maze construction
-- OpenGL graphical rendering
-- Automatic maze solving
-- Entrance and exit visualization
-- Red solution path visualization
+To make the maze more interesting, the generator occasionally:
 
+Removes an extra wall with probability 1/20
+This creates cycles in the maze
+Prevents purely tree-like structure
+Makes solving less predictable
+🎮 Visualization Features
+🟩 Green dot → Start position
+🟨 Yellow dot → End position
+🔴 Red dot → Current solver position
+🔵 Blue dots → Dead ends
+White lines → Maze walls
+🧪 Technologies Used
+Python
+Pygame
+PyOpenGL
+Random module (for maze randomness)
+▶️ How to Run
+1. Install dependencies:
+pip install pygame PyOpenGL
+2. Run the program:
+python main.py
+📂 Project Structure
+Maze Project/
+│── main.py
+│── README.md
+🧠 Key Concepts Used
+Depth-First Search (DFS)
+Backtracking algorithm
+Stack data structure
+Graph traversal
+Randomized algorithms
+Grid-based representation
+📊 Complexity
+Maze Generation: O(R × C)
+Maze Solving: O(R × C)
+🎓 Learning Outcome
 
-## Technologies Used
+This project demonstrates:
 
-- Python
-- Pygame
-- PyOpenGL
+How recursive backtracking works in real applications
+How mazes can be modeled as graphs
+Practical use of stacks in algorithm design
+Real-time visualization of algorithms
+📌 Author
 
-
-
-## How the Maze Generator Works
-
-1. All walls are initially intact.
-2. A virtual mouse starts in a random cell.
-3. The mouse checks neighboring cells.
-4. One unvisited neighbor is chosen randomly.
-5. The wall between the cells is removed.
-6. Previous cells are stored on a stack.
-7. When the mouse reaches a dead end, it backtracks using the stack.
-8. The process continues until all cells are visited.
-
-This guarantees a proper maze where every cell is connected by exactly one path.
-
-
-## Maze Solving Algorithm
-
-The maze is solved using a stack-based backtracking algorithm.
-
-The solver:
-- moves through open paths,
-- stores visited cells on a stack,
-- backtracks when trapped,
-- and continues until the exit is reached.
-
-The final path is displayed visually.
-
-
-## Running the Project
-
-Install dependencies:
-
-```bash
-pip install pygame PyOpenGL PyOpenGL_accelerate
-```
-
-Run the program:
-
-```bash
-py main.py
-```
-
----
-
-## File Structure
-
-```text
-project/
-│
-├── main.py
-├── README.md
-```
+Built as part of a Data Structures and Algorithms / Graphics assignment.
