@@ -239,6 +239,7 @@ def draw_path(path):
 # -------------------------
 # Draw Start and End
 # -------------------------
+
 def draw_points():
 
     glPointSize(14)
