@@ -12,7 +12,7 @@ WIDTH = 800
 HEIGHT = 800
 
 pygame.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF | OPENGL)
-pygame.display.set_caption("Maze Generator and Solver")
+pygame.display.set_caption("Animated Maze Generator and Solver")
 
 # -------------------------
 # Maze Settings
@@ -25,11 +25,27 @@ northWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 
 # -------------------------
+# Animation Variables
+# -------------------------
+visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
+
+stack = []
+
+current = (0, 0)
+
+visited[0][0] = True
+
+generation_complete = False
+
+path = []
+
+# -------------------------
 # Draw Maze Walls
 # -------------------------
 def draw_walls():
 
     glColor3f(1, 1, 1)
+
     glLineWidth(2)
 
     glBegin(GL_LINES)
@@ -52,8 +68,9 @@ def draw_walls():
             if eastWall[i][j] == 1:
                 glVertex2f(x_next, y)
                 glVertex2f(x_next, y_next)
-        # -------------------------
-    # Draw Left Border
+
+    # -------------------------
+    # Left Border
     # -------------------------
     for i in range(ROWS):
 
@@ -62,13 +79,13 @@ def draw_walls():
 
         x = -1 + MARGIN
 
-        # Leave entrance open
+        # Keep entrance open
         if i != 0:
             glVertex2f(x, y)
             glVertex2f(x, y_next)
 
     # -------------------------
-    # Draw Bottom Border
+    # Bottom Border
     # -------------------------
     for j in range(COLS):
 
@@ -77,116 +94,122 @@ def draw_walls():
 
         y = -1 + MARGIN
 
-        # Leave exit open
+        # Keep exit open
         if j != COLS - 1:
             glVertex2f(x, y)
             glVertex2f(x_next, y)
+
     glEnd()
 
 # -------------------------
-# Generate Maze
+# Generate Maze Step-by-Step
 # -------------------------
-def generate_maze():
+def generate_maze_step():
 
-    stack = []
-    visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
+    global current
+    global generation_complete
 
-    current = (0, 0)
-    visited[0][0] = True
+    if generation_complete:
+        return
 
-    while True:
+    i, j = current
 
-        i, j = current
+    neighbors = []
 
-        neighbors = []
+    # North
+    if i > 0 and not visited[i - 1][j]:
+        neighbors.append((i - 1, j, 'N'))
 
-        # North
-        if i > 0 and not visited[i - 1][j]:
-            neighbors.append((i - 1, j, 'N'))
+    # South
+    if i < ROWS - 1 and not visited[i + 1][j]:
+        neighbors.append((i + 1, j, 'S'))
 
-        # South
-        if i < ROWS - 1 and not visited[i + 1][j]:
-            neighbors.append((i + 1, j, 'S'))
+    # West
+    if j > 0 and not visited[i][j - 1]:
+        neighbors.append((i, j - 1, 'W'))
 
-        # West
-        if j > 0 and not visited[i][j - 1]:
-            neighbors.append((i, j - 1, 'W'))
+    # East
+    if j < COLS - 1 and not visited[i][j + 1]:
+        neighbors.append((i, j + 1, 'E'))
 
-        # East
-        if j < COLS - 1 and not visited[i][j + 1]:
-            neighbors.append((i, j + 1, 'E'))
+    if neighbors:
 
-        if neighbors:
+        stack.append(current)
 
-            stack.append(current)
+        ni, nj, direction = random.choice(neighbors)
 
-            ni, nj, direction = random.choice(neighbors)
+        # Remove walls
+        if direction == 'N':
+            northWall[i - 1][j] = 0
 
-            # Remove walls
-            if direction == 'N':
-                northWall[i - 1][j] = 0
+        elif direction == 'S':
+            northWall[i][j] = 0
 
-            elif direction == 'S':
-                northWall[i][j] = 0
+        elif direction == 'W':
+            eastWall[i][j - 1] = 0
 
-            elif direction == 'W':
-                eastWall[i][j - 1] = 0
+        elif direction == 'E':
+            eastWall[i][j] = 0
 
-            elif direction == 'E':
-                eastWall[i][j] = 0
+        current = (ni, nj)
 
-            current = (ni, nj)
+        visited[ni][nj] = True
 
-            visited[ni][nj] = True
+    elif stack:
+        current = stack.pop()
 
-        elif stack:
-            current = stack.pop()
+    else:
 
-        else:
-            break
+        # Open entrance
+        northWall[0][0] = 0
+
+        # Open exit
+        northWall[ROWS - 1][COLS - 1] = 0
+
+        generation_complete = True
 
 # -------------------------
 # Solve Maze
 # -------------------------
 def solve_maze():
 
-    stack = [(0, 0)]
+    stack_solver = [(0, 0)]
 
-    visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
+    visited_solver = [[False for _ in range(COLS)] for _ in range(ROWS)]
 
-    while stack:
+    while stack_solver:
 
-        i, j = stack[-1]
+        i, j = stack_solver[-1]
 
         if (i, j) == (ROWS - 1, COLS - 1):
-            return stack
+            return stack_solver
 
-        visited[i][j] = True
+        visited_solver[i][j] = True
 
         moved = False
 
         # North
-        if i > 0 and northWall[i - 1][j] == 0 and not visited[i - 1][j]:
-            stack.append((i - 1, j))
+        if i > 0 and northWall[i - 1][j] == 0 and not visited_solver[i - 1][j]:
+            stack_solver.append((i - 1, j))
             moved = True
 
         # South
-        elif i < ROWS - 1 and northWall[i][j] == 0 and not visited[i + 1][j]:
-            stack.append((i + 1, j))
+        elif i < ROWS - 1 and northWall[i][j] == 0 and not visited_solver[i + 1][j]:
+            stack_solver.append((i + 1, j))
             moved = True
 
         # West
-        elif j > 0 and eastWall[i][j - 1] == 0 and not visited[i][j - 1]:
-            stack.append((i, j - 1))
+        elif j > 0 and eastWall[i][j - 1] == 0 and not visited_solver[i][j - 1]:
+            stack_solver.append((i, j - 1))
             moved = True
 
         # East
-        elif j < COLS - 1 and eastWall[i][j] == 0 and not visited[i][j + 1]:
-            stack.append((i, j + 1))
+        elif j < COLS - 1 and eastWall[i][j] == 0 and not visited_solver[i][j + 1]:
+            stack_solver.append((i, j + 1))
             moved = True
 
         if not moved:
-            stack.pop()
+            stack_solver.pop()
 
     return []
 
@@ -214,7 +237,7 @@ def draw_path(path):
     glEnd()
 
 # -------------------------
-# Draw Start and End Points
+# Draw Start and End
 # -------------------------
 def draw_points():
 
@@ -225,7 +248,7 @@ def draw_points():
     cell_width = (2 - 2 * MARGIN) / COLS
     cell_height = (2 - 2 * MARGIN) / ROWS
 
-    # Start point (Green)
+    # Start point
     glColor3f(0, 1, 0)
 
     start_x = -1 + MARGIN + (cell_width / 2)
@@ -233,7 +256,7 @@ def draw_points():
 
     glVertex2f(start_x, start_y)
 
-    # End point (Blue)
+    # End point
     glColor3f(0, 0, 1)
 
     end_x = -1 + MARGIN + ((COLS - 1) * cell_width) + (cell_width / 2)
@@ -244,20 +267,11 @@ def draw_points():
     glEnd()
 
 # -------------------------
-# Run Maze Logic
-# -------------------------
-generate_maze()
-
-path = solve_maze()
-# Open maze entrance
-northWall[0][0] = 0
-
-# Open maze exit
-northWall[ROWS - 1][COLS - 1] = 0
-# -------------------------
 # Main Loop
 # -------------------------
 running = True
+
+clock = pygame.time.Clock()
 
 while running:
 
@@ -267,10 +281,23 @@ while running:
 
     glClear(GL_COLOR_BUFFER_BIT)
 
+    # Animate maze generation
+    if not generation_complete:
+        generate_maze_step()
+
+    else:
+        if not path:
+            path = solve_maze()
+
     draw_walls()
-    draw_path(path)
+
+    if path:
+        draw_path(path)
+
     draw_points()
 
     pygame.display.flip()
+
+    clock.tick(60)
 
 pygame.quit()
