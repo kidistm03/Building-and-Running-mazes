@@ -21,6 +21,8 @@ ROWS = 10
 COLS = 10
 MARGIN = 0.12
 
+# northWall[i][j] = 1 → wall exists
+# eastWall[i][j] = 1 → wall exists
 northWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 
@@ -28,33 +30,31 @@ eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 # Maze Generation Variables
 # -------------------------
 visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
-
 stack = []
 
 current = (0, 0)
-
 visited[0][0] = True
-
 generation_complete = False
 
 # -------------------------
 # Solver Variables
 # -------------------------
-solver_stack = [(0, 0)]
-
+solver_stack = []
 solver_visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
-
 dead_ends = []
-
 solver_complete = False
-
 current_solver = (0, 0)
+
+# Random START (left edge) and END (right edge)
+start = (random.randint(0, ROWS - 1), 0)
+end = (random.randint(0, ROWS - 1), COLS - 1)
+
+solver_stack.append(start)
 
 # -------------------------
 # Helper Function
 # -------------------------
 def get_cell_center(i, j):
-
     cell_width = (2 - 2 * MARGIN) / COLS
     cell_height = (2 - 2 * MARGIN) / ROWS
 
@@ -67,11 +67,8 @@ def get_cell_center(i, j):
 # Draw Maze Walls
 # -------------------------
 def draw_walls():
-
     glColor3f(1, 1, 1)
-
     glLineWidth(2)
-
     glBegin(GL_LINES)
 
     for i in range(ROWS):
@@ -83,116 +80,77 @@ def draw_walls():
             x_next = -1 + MARGIN + ((2 - 2 * MARGIN) * (j + 1) / COLS)
             y_next = -1 + MARGIN + ((2 - 2 * MARGIN) * (i + 1) / ROWS)
 
-            # Top wall
             if northWall[i][j] == 1:
                 glVertex2f(x, y_next)
                 glVertex2f(x_next, y_next)
 
-            # Right wall
             if eastWall[i][j] == 1:
                 glVertex2f(x_next, y)
                 glVertex2f(x_next, y_next)
 
-    # Left Border
-    for i in range(ROWS):
-
-        y = -1 + MARGIN + ((2 - 2 * MARGIN) * i / ROWS)
-        y_next = -1 + MARGIN + ((2 - 2 * MARGIN) * (i + 1) / ROWS)
-
-        x = -1 + MARGIN
-
-        if i != 0:
-            glVertex2f(x, y)
-            glVertex2f(x, y_next)
-
-    # Bottom Border
-    for j in range(COLS):
-
-        x = -1 + MARGIN + ((2 - 2 * MARGIN) * j / COLS)
-        x_next = -1 + MARGIN + ((2 - 2 * MARGIN) * (j + 1) / COLS)
-
-        y = -1 + MARGIN
-
-        if j != COLS - 1:
-            glVertex2f(x, y)
-            glVertex2f(x_next, y)
-
     glEnd()
 
 # -------------------------
-# Animated Maze Generation
+# Maze Generation (DFS)
 # -------------------------
 def generate_maze_step():
-
-    global current
-    global generation_complete
+    global current, generation_complete
 
     if generation_complete:
         return
 
     i, j = current
-
     neighbors = []
 
-    # North
     if i > 0 and not visited[i - 1][j]:
         neighbors.append((i - 1, j, 'N'))
-
-    # South
     if i < ROWS - 1 and not visited[i + 1][j]:
         neighbors.append((i + 1, j, 'S'))
-
-    # West
     if j > 0 and not visited[i][j - 1]:
         neighbors.append((i, j - 1, 'W'))
-
-    # East
     if j < COLS - 1 and not visited[i][j + 1]:
         neighbors.append((i, j + 1, 'E'))
 
     if neighbors:
-
         stack.append(current)
 
         ni, nj, direction = random.choice(neighbors)
 
-        # Remove walls
+        # remove wall
         if direction == 'N':
             northWall[i - 1][j] = 0
-
         elif direction == 'S':
             northWall[i][j] = 0
-
         elif direction == 'W':
             eastWall[i][j - 1] = 0
-
         elif direction == 'E':
             eastWall[i][j] = 0
 
-        current = (ni, nj)
+        # BONUS: create cycles sometimes (1/20)
+        if random.randint(1, 20) == 1:
+            if direction == 'N' and i > 0:
+                northWall[i - 1][j] = 0
+            if direction == 'S' and i < ROWS - 1:
+                northWall[i][j] = 0
+            if direction == 'W' and j > 0:
+                eastWall[i][j - 1] = 0
+            if direction == 'E' and j < COLS - 1:
+                eastWall[i][j] = 0
 
+        current = (ni, nj)
         visited[ni][nj] = True
 
     elif stack:
         current = stack.pop()
 
     else:
-
-        # Entrance
-        northWall[0][0] = 0
-
-        # Exit
-        northWall[ROWS - 1][COLS - 1] = 0
-
         generation_complete = True
 
 # -------------------------
-# Animated Maze Solver
+# Maze Solver (Random DFS)
 # -------------------------
 def solve_maze_step():
-
-    global solver_complete
-    global current_solver
+    global solver_complete, current_solver
 
     if solver_complete:
         return
@@ -202,119 +160,86 @@ def solve_maze_step():
         return
 
     i, j = solver_stack[-1]
-
     current_solver = (i, j)
 
-    if (i, j) == (ROWS - 1, COLS - 1):
+    if (i, j) == end:
         solver_complete = True
         return
 
     solver_visited[i][j] = True
 
+    moves = []
+
+    if i > 0 and northWall[i - 1][j] == 0:
+        moves.append((i - 1, j))
+    if i < ROWS - 1 and northWall[i][j] == 0:
+        moves.append((i + 1, j))
+    if j > 0 and eastWall[i][j - 1] == 0:
+        moves.append((i, j - 1))
+    if j < COLS - 1 and eastWall[i][j] == 0:
+        moves.append((i, j + 1))
+
+    random.shuffle(moves)
+
     moved = False
 
-    # North
-    if i > 0 and northWall[i - 1][j] == 0 and not solver_visited[i - 1][j]:
-        solver_stack.append((i - 1, j))
-        moved = True
-
-    # South
-    elif i < ROWS - 1 and northWall[i][j] == 0 and not solver_visited[i + 1][j]:
-        solver_stack.append((i + 1, j))
-        moved = True
-
-    # West
-    elif j > 0 and eastWall[i][j - 1] == 0 and not solver_visited[i][j - 1]:
-        solver_stack.append((i, j - 1))
-        moved = True
-
-    # East
-    elif j < COLS - 1 and eastWall[i][j] == 0 and not solver_visited[i][j + 1]:
-        solver_stack.append((i, j + 1))
-        moved = True
+    for ni, nj in moves:
+        if not solver_visited[ni][nj]:
+            solver_stack.append((ni, nj))
+            moved = True
+            break
 
     if not moved:
-
         dead_ends.append((i, j))
-
         solver_stack.pop()
 
 # -------------------------
-# Draw Dead Ends
+# Draw Helpers
 # -------------------------
 def draw_dead_ends():
-
-    glPointSize(10)
-
+    glPointSize(8)
     glBegin(GL_POINTS)
-
     glColor3f(0, 0, 1)
 
     for i, j in dead_ends:
-
         x, y = get_cell_center(i, j)
-
         glVertex2f(x, y)
 
     glEnd()
 
-# -------------------------
-# Draw Solver Path
-# -------------------------
 def draw_solver_path():
-
     glColor3f(1, 0, 0)
-
-    glLineWidth(4)
-
+    glLineWidth(3)
     glBegin(GL_LINE_STRIP)
 
     for i, j in solver_stack:
-
         x, y = get_cell_center(i, j)
-
         glVertex2f(x, y)
 
     glEnd()
 
-# -------------------------
-# Draw Mouse
-# -------------------------
 def draw_mouse():
-
-    glPointSize(16)
-
+    glPointSize(12)
     glBegin(GL_POINTS)
-
     glColor3f(1, 0, 0)
 
     x, y = get_cell_center(current_solver[0], current_solver[1])
-
     glVertex2f(x, y)
 
     glEnd()
 
-# -------------------------
-# Draw Start and End
-# -------------------------
 def draw_points():
-
     glPointSize(14)
-
     glBegin(GL_POINTS)
 
-    # Start
+    # start
     glColor3f(0, 1, 0)
-
-    x, y = get_cell_center(0, 0)
-
+    x, y = get_cell_center(start[0], start[1])
     glVertex2f(x, y)
 
-    # End
+    # end
     glColor3f(1, 1, 0)
-
-    x, y = get_cell_center(ROWS - 1, COLS - 1)
-
+    x, y = get_cell_center(end[0], end[1])
     glVertex2f(x, y)
 
     glEnd()
@@ -323,41 +248,29 @@ def draw_points():
 # Main Loop
 # -------------------------
 running = True
-
 clock = pygame.time.Clock()
 
 while running:
 
     for event in pygame.event.get():
-
         if event.type == pygame.QUIT:
             running = False
 
     glClear(GL_COLOR_BUFFER_BIT)
 
-    # Generate maze animation
     if not generation_complete:
-
         generate_maze_step()
-
     else:
-
-        # Solve animation
         if not solver_complete:
             solve_maze_step()
 
     draw_walls()
-
     draw_dead_ends()
-
     draw_solver_path()
-
     draw_mouse()
-
     draw_points()
 
     pygame.display.flip()
-
     clock.tick(30)
 
 pygame.quit()
