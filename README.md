@@ -92,9 +92,11 @@ PyOpenGL
 Random module (for maze randomness)
 
 ## Project Structure
+```
 Maze Project/
 │── main.py
 │── README.md
+```
 ## Key Concepts Used
 Depth-First Search (DFS)
 Backtracking algorithm
