@@ -12,12 +12,11 @@ WIDTH = 800
 HEIGHT = 800
 
 pygame.display.set_mode((WIDTH, HEIGHT), DOUBLEBUF | OPENGL)
-pygame.display.set_caption("Animated Maze Generator and Solver")
+pygame.display.set_caption("Maze Generator and Solver")
 
 # -------------------------
 # Maze Settings
 # -------------------------
-
 ROWS = 10
 COLS = 10
 MARGIN = 0.12
@@ -26,7 +25,7 @@ northWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 eastWall = [[1 for _ in range(COLS)] for _ in range(ROWS)]
 
 # -------------------------
-# Animation Variables
+# Maze Generation Variables
 # -------------------------
 visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
 
@@ -38,7 +37,31 @@ visited[0][0] = True
 
 generation_complete = False
 
-path = []
+# -------------------------
+# Solver Variables
+# -------------------------
+solver_stack = [(0, 0)]
+
+solver_visited = [[False for _ in range(COLS)] for _ in range(ROWS)]
+
+dead_ends = []
+
+solver_complete = False
+
+current_solver = (0, 0)
+
+# -------------------------
+# Helper Function
+# -------------------------
+def get_cell_center(i, j):
+
+    cell_width = (2 - 2 * MARGIN) / COLS
+    cell_height = (2 - 2 * MARGIN) / ROWS
+
+    x = -1 + MARGIN + (j * cell_width) + (cell_width / 2)
+    y = -1 + MARGIN + (i * cell_height) + (cell_height / 2)
+
+    return x, y
 
 # -------------------------
 # Draw Maze Walls
@@ -70,9 +93,7 @@ def draw_walls():
                 glVertex2f(x_next, y)
                 glVertex2f(x_next, y_next)
 
-    # -------------------------
     # Left Border
-    # -------------------------
     for i in range(ROWS):
 
         y = -1 + MARGIN + ((2 - 2 * MARGIN) * i / ROWS)
@@ -80,14 +101,11 @@ def draw_walls():
 
         x = -1 + MARGIN
 
-        # Keep entrance open
         if i != 0:
             glVertex2f(x, y)
             glVertex2f(x, y_next)
 
-    # -------------------------
     # Bottom Border
-    # -------------------------
     for j in range(COLS):
 
         x = -1 + MARGIN + ((2 - 2 * MARGIN) * j / COLS)
@@ -95,7 +113,6 @@ def draw_walls():
 
         y = -1 + MARGIN
 
-        # Keep exit open
         if j != COLS - 1:
             glVertex2f(x, y)
             glVertex2f(x_next, y)
@@ -103,9 +120,8 @@ def draw_walls():
     glEnd()
 
 # -------------------------
-# Generate Maze Step-by-Step
+# Animated Maze Generation
 # -------------------------
-
 def generate_maze_step():
 
     global current
@@ -162,63 +178,90 @@ def generate_maze_step():
 
     else:
 
-        # Open entrance
+        # Entrance
         northWall[0][0] = 0
 
-        # Open exit
+        # Exit
         northWall[ROWS - 1][COLS - 1] = 0
 
         generation_complete = True
 
 # -------------------------
-# Solve Maze
+# Animated Maze Solver
 # -------------------------
-def solve_maze():
+def solve_maze_step():
 
-    stack_solver = [(0, 0)]
+    global solver_complete
+    global current_solver
 
-    visited_solver = [[False for _ in range(COLS)] for _ in range(ROWS)]
+    if solver_complete:
+        return
 
-    while stack_solver:
+    if not solver_stack:
+        solver_complete = True
+        return
 
-        i, j = stack_solver[-1]
+    i, j = solver_stack[-1]
 
-        if (i, j) == (ROWS - 1, COLS - 1):
-            return stack_solver
+    current_solver = (i, j)
 
-        visited_solver[i][j] = True
+    if (i, j) == (ROWS - 1, COLS - 1):
+        solver_complete = True
+        return
 
-        moved = False
+    solver_visited[i][j] = True
 
-        # North
-        if i > 0 and northWall[i - 1][j] == 0 and not visited_solver[i - 1][j]:
-            stack_solver.append((i - 1, j))
-            moved = True
+    moved = False
 
-        # South
-        elif i < ROWS - 1 and northWall[i][j] == 0 and not visited_solver[i + 1][j]:
-            stack_solver.append((i + 1, j))
-            moved = True
+    # North
+    if i > 0 and northWall[i - 1][j] == 0 and not solver_visited[i - 1][j]:
+        solver_stack.append((i - 1, j))
+        moved = True
 
-        # West
-        elif j > 0 and eastWall[i][j - 1] == 0 and not visited_solver[i][j - 1]:
-            stack_solver.append((i, j - 1))
-            moved = True
+    # South
+    elif i < ROWS - 1 and northWall[i][j] == 0 and not solver_visited[i + 1][j]:
+        solver_stack.append((i + 1, j))
+        moved = True
 
-        # East
-        elif j < COLS - 1 and eastWall[i][j] == 0 and not visited_solver[i][j + 1]:
-            stack_solver.append((i, j + 1))
-            moved = True
+    # West
+    elif j > 0 and eastWall[i][j - 1] == 0 and not solver_visited[i][j - 1]:
+        solver_stack.append((i, j - 1))
+        moved = True
 
-        if not moved:
-            stack_solver.pop()
+    # East
+    elif j < COLS - 1 and eastWall[i][j] == 0 and not solver_visited[i][j + 1]:
+        solver_stack.append((i, j + 1))
+        moved = True
 
-    return []
+    if not moved:
+
+        dead_ends.append((i, j))
+
+        solver_stack.pop()
 
 # -------------------------
-# Draw Path
+# Draw Dead Ends
 # -------------------------
-def draw_path(path):
+def draw_dead_ends():
+
+    glPointSize(10)
+
+    glBegin(GL_POINTS)
+
+    glColor3f(0, 0, 1)
+
+    for i, j in dead_ends:
+
+        x, y = get_cell_center(i, j)
+
+        glVertex2f(x, y)
+
+    glEnd()
+
+# -------------------------
+# Draw Solver Path
+# -------------------------
+def draw_solver_path():
 
     glColor3f(1, 0, 0)
 
@@ -226,48 +269,56 @@ def draw_path(path):
 
     glBegin(GL_LINE_STRIP)
 
-    cell_width = (2 - 2 * MARGIN) / COLS
-    cell_height = (2 - 2 * MARGIN) / ROWS
+    for i, j in solver_stack:
 
-    for i, j in path:
-
-        x = -1 + MARGIN + (j * cell_width) + (cell_width / 2)
-        y = -1 + MARGIN + (i * cell_height) + (cell_height / 2)
+        x, y = get_cell_center(i, j)
 
         glVertex2f(x, y)
 
     glEnd()
 
 # -------------------------
+# Draw Mouse
+# -------------------------
+def draw_mouse():
+
+    glPointSize(16)
+
+    glBegin(GL_POINTS)
+
+    glColor3f(1, 0, 0)
+
+    x, y = get_cell_center(current_solver[0], current_solver[1])
+
+    glVertex2f(x, y)
+
+    glEnd()
+
+# -------------------------
 # Draw Start and End
 # -------------------------
-
 def draw_points():
 
     glPointSize(14)
 
     glBegin(GL_POINTS)
 
-    cell_width = (2 - 2 * MARGIN) / COLS
-    cell_height = (2 - 2 * MARGIN) / ROWS
-
-    # Start point
+    # Start
     glColor3f(0, 1, 0)
 
-    start_x = -1 + MARGIN + (cell_width / 2)
-    start_y = -1 + MARGIN + (cell_height / 2)
+    x, y = get_cell_center(0, 0)
 
-    glVertex2f(start_x, start_y)
+    glVertex2f(x, y)
 
-    # End point
-    glColor3f(0, 0, 1)
+    # End
+    glColor3f(1, 1, 0)
 
-    end_x = -1 + MARGIN + ((COLS - 1) * cell_width) + (cell_width / 2)
-    end_y = -1 + MARGIN + ((ROWS - 1) * cell_height) + (cell_height / 2)
+    x, y = get_cell_center(ROWS - 1, COLS - 1)
 
-    glVertex2f(end_x, end_y)
+    glVertex2f(x, y)
 
     glEnd()
+
 # -------------------------
 # Main Loop
 # -------------------------
@@ -278,28 +329,35 @@ clock = pygame.time.Clock()
 while running:
 
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             running = False
 
     glClear(GL_COLOR_BUFFER_BIT)
 
-    # Animate maze generation
+    # Generate maze animation
     if not generation_complete:
+
         generate_maze_step()
 
     else:
-        if not path:
-            path = solve_maze()
+
+        # Solve animation
+        if not solver_complete:
+            solve_maze_step()
 
     draw_walls()
 
-    if path:
-        draw_path(path)
+    draw_dead_ends()
+
+    draw_solver_path()
+
+    draw_mouse()
 
     draw_points()
 
     pygame.display.flip()
 
-    clock.tick(60)
+    clock.tick(30)
 
 pygame.quit()
