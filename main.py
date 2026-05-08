@@ -265,7 +265,6 @@ def draw_points():
     glVertex2f(end_x, end_y)
 
     glEnd()
-
 # -------------------------
 # Main Loop
 # -------------------------
