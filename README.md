@@ -44,7 +44,7 @@ The final solution path is displayed graphically.
 - Pygame
 - PyOpenGL
 
----
+
 
 ## How the Maze Generator Works
 
@@ -59,7 +59,6 @@ The final solution path is displayed graphically.
 
 This guarantees a proper maze where every cell is connected by exactly one path.
 
----
 
 ## Maze Solving Algorithm
 
@@ -73,7 +72,6 @@ The solver:
 
 The final path is displayed visually.
 
----
 
 ## Running the Project
 
@@ -99,9 +97,3 @@ project/
 ├── main.py
 ├── README.md
 ```
-
----
-
-## Author
-
-Computer Graphics Maze Project
